@@ -42,6 +42,7 @@ function Dashboard({
   const [diskPages, setDiskPages] = useState([]);
   const [diskLoading, setDiskLoading] = useState(false);
   const [writebackNotification, setWritebackNotification] = useState(null);
+  const pageStateSyncQueue = React.useRef(Promise.resolve());
 
   useEffect(() => {
     api.getPages()
@@ -95,13 +96,18 @@ function Dashboard({
   const step = steps[currentStepIndex - 1];
     if (!Array.isArray(step.frames)) return;
 
-    api.syncPageState({
+    const state = {
       frames: step.frames,
       dirtyPages: dirtyPagesMap,
-    }).catch((error) => {
-      console.error("Could not sync simulation frame state:", error);
-    });
-    }, [currentStepIndex, steps]);
+    };
+
+    pageStateSyncQueue.current = pageStateSyncQueue.current
+      .catch(() => {})
+      .then(() => api.syncPageState(state))
+      .catch((error) => {
+        console.error("Could not sync simulation frame state:", error);
+      });
+    }, [currentStepIndex, steps, dirtyPagesMap]);
 
     const handleOpenModify = (frameId, pageId, currentData) => {
       setModifyingTarget({ frameId, pageId });
