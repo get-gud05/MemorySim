@@ -26,6 +26,7 @@ function Dashboard({
   const [currentStepIndex, setCurrentStepIndex] = useState(steps.length > 0 ? 1 : 0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [activeTab, setActiveTab] = useState("timeline");
+  const [copyStatus, setCopyStatus] = useState("");
 
   const [pageDataMap, setPageDataMap] = useState({});
   const [dirtyPagesMap, setDirtyPagesMap] = useState({});
@@ -196,6 +197,26 @@ function Dashboard({
     diskWrites: (metrics.diskWrites || 0) + dirtyWritesCount,
   };
 
+  const handleCopyResults = async () => {
+    const summary = [
+      "System Storage Simulator Results",
+      `Algorithm: ${config.algorithm || "LRU"}`,
+      `Workload: ${config.workloadType || "Random"}`,
+      `Requests: ${metrics.totalRequests ?? steps.length}`,
+      `Buffer hits: ${metrics.bufferHits ?? 0}`,
+      `Hit ratio: ${metrics.bufferHitRatio ?? 0}%`,
+      `Page faults: ${metrics.pageFaults ?? metrics.bufferMisses ?? 0}`,
+      `Evictions: ${metrics.evictions ?? 0}`,
+    ].join("\n");
+
+    try {
+      await navigator.clipboard.writeText(summary);
+      setCopyStatus("Results copied");
+    } catch {
+      setCopyStatus("Could not copy results");
+    }
+  };
+
   return (
     <div className="page dashboard-page">
       <div className="page-title dashboard-header">
@@ -209,6 +230,15 @@ function Dashboard({
         </div>
 
         <div className="header-action-buttons">
+          <button
+            type="button"
+            className="btn-secondary"
+            onClick={handleCopyResults}
+            title="Copy a summary of this simulation to the clipboard"
+          >
+            {copyStatus || "Copy Results"}
+          </button>
+
           <button
             type="button"
             className="btn-secondary"
